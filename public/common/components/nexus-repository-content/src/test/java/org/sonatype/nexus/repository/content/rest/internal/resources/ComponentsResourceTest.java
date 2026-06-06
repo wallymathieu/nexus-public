@@ -14,10 +14,12 @@ package org.sonatype.nexus.repository.content.rest.internal.resources;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response.Status;
 
 import org.sonatype.goodies.testsupport.TestSupport;
 import org.sonatype.nexus.repository.Format;
 import org.sonatype.nexus.repository.Repository;
+import org.sonatype.nexus.repository.WritePolicyConflictException;
 import org.sonatype.nexus.repository.content.fluent.FluentComponent;
 import org.sonatype.nexus.repository.content.maintenance.MaintenanceService;
 import org.sonatype.nexus.repository.content.rest.ComponentsResourceExtension;
@@ -28,6 +30,7 @@ import org.sonatype.nexus.repository.selector.ContentAuthHelper;
 import org.sonatype.nexus.repository.types.HostedType;
 import org.sonatype.nexus.repository.upload.UploadManager;
 import org.sonatype.nexus.repository.upload.UploadResponse;
+import org.sonatype.nexus.rest.WebApplicationMessageException;
 
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
@@ -38,6 +41,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import static java.util.Collections.emptyList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -92,6 +98,18 @@ public class ComponentsResourceTest
     UploadResponse uploadResponse = new UploadResponse(emptyList());
     when(uploadManager.handle(testRepo, request)).thenReturn(uploadResponse);
     underTest.uploadComponent(testRepoName, request);
+  }
+
+  @Test
+  public void uploadComponentReturnsConflictForWritePolicyConflict() throws Exception {
+    HttpServletRequest request = mock(HttpServletRequest.class);
+    when(request.getContentType()).thenReturn(MediaType.MULTIPART_FORM_DATA);
+    when(uploadManager.handle(testRepo, request)).thenThrow(new WritePolicyConflictException("already exists"));
+
+    WebApplicationMessageException exception =
+        assertThrows(WebApplicationMessageException.class, () -> underTest.uploadComponent(testRepoName, request));
+
+    assertThat(exception.getResponse().getStatusInfo(), is(Status.CONFLICT));
   }
 
   protected void configureMockedRepository(final Repository repository, final String name, final String url)

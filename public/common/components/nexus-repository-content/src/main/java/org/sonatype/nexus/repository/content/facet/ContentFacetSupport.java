@@ -30,6 +30,7 @@ import org.sonatype.nexus.datastore.api.DataSession;
 import org.sonatype.nexus.repository.FacetSupport;
 import org.sonatype.nexus.repository.IllegalOperationException;
 import org.sonatype.nexus.repository.Repository;
+import org.sonatype.nexus.repository.WritePolicyConflictException;
 import org.sonatype.nexus.repository.config.Configuration;
 import org.sonatype.nexus.repository.config.ConfigurationFacet;
 import org.sonatype.nexus.repository.config.WritePolicy;
@@ -314,7 +315,7 @@ public abstract class ContentFacetSupport
       }
     }
     else if (!writePolicy(asset).checkUpdateAllowed()) {
-      throwNotAllowed(asset, " cannot be updated");
+      throw new WritePolicyConflictException(repository().getName() + asset.path() + " cannot be updated");
     }
   }
 
