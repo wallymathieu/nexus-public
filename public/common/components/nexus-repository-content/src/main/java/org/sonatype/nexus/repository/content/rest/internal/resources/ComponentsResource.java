@@ -40,6 +40,7 @@ import org.sonatype.nexus.common.QualifierUtil;
 import org.sonatype.nexus.common.entity.DetachedEntityId;
 import org.sonatype.nexus.repository.IllegalOperationException;
 import org.sonatype.nexus.repository.Repository;
+import org.sonatype.nexus.repository.WritePolicyConflictException;
 import org.sonatype.nexus.repository.content.facet.ContentFacet;
 import org.sonatype.nexus.repository.content.fluent.FluentComponent;
 import org.sonatype.nexus.repository.content.maintenance.MaintenanceService;
@@ -187,6 +188,9 @@ public class ComponentsResource
 
     try {
       uploadManager.handle(repository, request);
+    }
+    catch (WritePolicyConflictException e) {
+      throw new WebApplicationMessageException(Status.CONFLICT, e.getMessage());
     }
     catch (IllegalOperationException e) {
       throw new WebApplicationMessageException(Status.BAD_REQUEST, e.getMessage());
